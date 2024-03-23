@@ -20,9 +20,11 @@ about = {
 # engine dependent config
 categories = ['social media']
 page_size = 25
+user_agent = ''
+show_images = True
 
 # search-url
-base_url = 'https://www.reddit.com/'
+base_url = 'https://old.reddit.com/'
 search_url = base_url + 'search.json?{query}'
 
 
@@ -30,6 +32,9 @@ def request(query, params):
 
     query = urlencode({'q': query, 'limit': page_size})
     params['url'] = search_url.format(query=query)
+
+    if user_agent:
+        params['headers']['User-Agent'] = user_agent
 
     return params
 
@@ -58,7 +63,7 @@ def response(resp):
         thumbnail = data['thumbnail']
         url_info = urlparse(thumbnail)
         # netloc & path
-        if url_info[1] != '' and url_info[2] != '':
+        if show_images and url_info[1] != '' and url_info[2] != '':
             params['img_src'] = data['url']
             params['thumbnail_src'] = thumbnail
             params['template'] = 'images.html'
