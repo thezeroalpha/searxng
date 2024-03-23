@@ -162,8 +162,8 @@ searxng.ready(function () {
           des: 'scroll to the top of the page',
           cat: 'Navigation'
         },
-        'v': {
-          key: 'v',
+        'G': {
+          key: 'G',
           fun: scrollPageTo(document.body.scrollHeight, 'bottom'),
           des: 'scroll to the bottom of the page',
           cat: 'Navigation'
@@ -189,14 +189,16 @@ searxng.ready(function () {
       }, baseKeyBinding)
   }
 
-  var keyBindings = keyBindingLayouts[searxng.settings.hotkeys] || keyBindingLayouts.default;
+
+  var isMobile = window.matchMedia("(any-pointer: coarse)").matches;
+  var keyBindings = isMobile ? keyBindingLayouts['vim'] : (keyBindingLayouts[searxng.settings.hotkeys] || keyBindingLayouts.default);
 
   searxng.on(document, "keydown", function (e) {
     // check for modifiers so we don't break browser's hotkeys
     if (
       Object.prototype.hasOwnProperty.call(keyBindings, e.key)
         && !e.ctrlKey && !e.altKey
-        && !e.shiftKey && !e.metaKey
+        && !e.metaKey
     ) {
       var tagName = e.target.tagName.toLowerCase();
       if (e.key === 'Escape') {
