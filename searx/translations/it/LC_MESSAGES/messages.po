@@ -32,9 +32,8 @@ msgstr ""
 "Project-Id-Version: searx\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2024-06-17 12:15+0000\n"
-"PO-Revision-Date: 2024-06-18 21:18+0000\n"
-"Last-Translator: tiziodcaio <tiziodcaio@users.noreply.translate.codeberg.org>"
-"\n"
+"PO-Revision-Date: 2024-07-01 00:18+0000\n"
+"Last-Translator: return42 <return42@users.noreply.translate.codeberg.org>\n"
 "Language-Team: Italian <https://translate.codeberg.org/projects/searxng/"
 "searxng/it/>\n"
 "Language: it\n"
@@ -42,7 +41,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.5.5\n"
+"X-Generator: Weblate 5.6.1\n"
 "Generated-By: Babel 2.15.0\n"
 
 #. CONSTANT_NAMES['NO_SUBGROUPING']
@@ -228,7 +227,7 @@ msgstr "Umidità"
 #. WEATHER_TERMS['MAX TEMP.']
 #: searx/searxng.msg
 msgid "Max temp."
-msgstr "Temp. max"
+msgstr "Temp. massima"
 
 #. WEATHER_TERMS['MIN TEMP.']
 #: searx/searxng.msg
@@ -574,11 +573,11 @@ msgstr ""
 
 #: searx/plugins/self_info.py:28
 msgid "Your IP is: "
-msgstr ""
+msgstr "Il tuo IP è: "
 
 #: searx/plugins/self_info.py:31
 msgid "Your user-agent is: "
-msgstr ""
+msgstr "Il tuo interprete è: "
 
 #: searx/plugins/tor_check.py:24
 msgid "Tor check plugin"
