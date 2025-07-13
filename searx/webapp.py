@@ -7,8 +7,6 @@
 from __future__ import annotations
 
 import inspect
-import hashlib
-import hmac
 import json
 import os
 import sys
@@ -78,7 +76,6 @@ from searx.engines import (
 from searx import webutils
 from searx.webutils import (
     highlight_content,
-    get_static_files,
     get_result_templates,
     get_themes,
     exception_classname_to_text,
@@ -108,6 +105,7 @@ from searx.metrics import get_engines_stats, get_engine_errors, get_reliabilitie
 from searx.flaskfix import patch_application
 
 from searx.locales import (
+    LOCALE_BEST_MATCH,
     LOCALE_NAMES,
     RTL_LOCALES,
     localeselector,
@@ -119,7 +117,7 @@ from searx.locales import (
 from searx.autocomplete import search_autocomplete, backends as autocomplete_backends
 from searx import favicons
 
-from searx.redisdb import initialize as redis_initialize
+from searx.valkeydb import initialize as valkey_initialize
 from searx.sxng_locales import sxng_locales
 import searx.search
 from searx.network import stream as http_stream, set_context_network_name
@@ -132,7 +130,6 @@ warnings.simplefilter("always")
 
 # about static
 logger.debug('static directory is %s', settings['ui']['static_path'])
-static_files = get_static_files(settings['ui']['static_path'])
 
 # about templates
 logger.debug('templates directory is %s', settings['ui']['templates_path'])
@@ -240,43 +237,44 @@ def get_result_template(theme_name: str, template_name: str):
     return 'result_templates/' + template_name
 
 
+_STATIC_FILES: list[str] = []
+
+
 def custom_url_for(endpoint: str, **values):
-    suffix = ""
-    if endpoint == 'static' and values.get('filename'):
-        file_hash = static_files.get(values['filename'])
-        if not file_hash:
+    global _STATIC_FILES  # pylint: disable=global-statement
+    if not _STATIC_FILES:
+        _STATIC_FILES = webutils.get_static_file_list()
+
+    if endpoint == "static" and values.get("filename"):
+
+        # We need to verify the "filename" argument: in the jinja templates
+        # there could be call like:
+        #     url_for('static', filename='img/favicon.png')
+        # which should map to:
+        #     static/themes/<theme_name>/img/favicon.png
+
+        arg_filename = values["filename"]
+        if arg_filename not in _STATIC_FILES:
             # try file in the current theme
-            theme_name = sxng_request.preferences.get_value('theme')
-            filename_with_theme = "themes/{}/{}".format(theme_name, values['filename'])
-            file_hash = static_files.get(filename_with_theme)
-            if file_hash:
-                values['filename'] = filename_with_theme
-        if get_setting('ui.static_use_hash') and file_hash:
-            suffix = "?" + file_hash
-    if endpoint == 'info' and 'locale' not in values:
-        locale = sxng_request.preferences.get_value('locale')
-        if infopage.INFO_PAGES.get_page(values['pagename'], locale) is None:
+            theme_name = sxng_request.preferences.get_value("theme")
+            arg_filename = f"themes/{theme_name}/{arg_filename}"
+            if arg_filename in _STATIC_FILES:
+                values["filename"] = arg_filename
+
+    if endpoint == "info" and "locale" not in values:
+
+        # We need to verify the "locale" argument: in the jinja templates there
+        # could be call like:
+        #     url_for('info', pagename='about')
+        # which should map to:
+        #     info/<locale>/about
+
+        locale = sxng_request.preferences.get_value("locale")
+        if infopage.INFO_PAGES.get_page(values["pagename"], locale) is None:
             locale = infopage.INFO_PAGES.locale_default
-        values['locale'] = locale
-    return url_for(endpoint, **values) + suffix
+        values["locale"] = locale
 
-
-def morty_proxify(url: str):
-    if not url:
-        return url
-
-    if url.startswith('//'):
-        url = 'https:' + url
-
-    if not settings['result_proxy']['url']:
-        return url
-
-    url_params = dict(mortyurl=url)
-
-    if settings['result_proxy']['key']:
-        url_params['mortyhash'] = hmac.new(settings['result_proxy']['key'], url.encode(), hashlib.sha256).hexdigest()
-
-    return '{0}?{1}'.format(settings['result_proxy']['url'], urlencode(url_params))
+    return url_for(endpoint, **values)
 
 
 def image_proxify(url: str):
@@ -299,9 +297,6 @@ def image_proxify(url: str):
         ):
             return url
         return None
-
-    if settings['result_proxy']['url']:
-        return morty_proxify(url)
 
     h = new_hmac(settings['server']['secret_key'], url.encode())
 
@@ -424,8 +419,6 @@ def render(template_name: str, **kwargs):
     kwargs['url_for'] = custom_url_for  # override url_for function in templates
     kwargs['image_proxify'] = image_proxify
     kwargs['favicon_url'] = favicons.favicon_url
-    kwargs['proxify'] = morty_proxify if settings['result_proxy']['url'] is not None else None
-    kwargs['proxify_results'] = settings['result_proxy']['proxify_results']
     kwargs['cache_url'] = settings['ui']['cache_url']
     kwargs['get_result_template'] = get_result_template
     kwargs['opensearch_url'] = (
@@ -1084,10 +1077,12 @@ def image_proxy():
 
 @app.route('/engine_descriptions.json', methods=['GET'])
 def engine_descriptions():
-    locale = get_locale().split('_')[0]
+    sxng_ui_lang_tag = get_locale().replace("_", "-")
+    sxng_ui_lang_tag = LOCALE_BEST_MATCH.get(sxng_ui_lang_tag, sxng_ui_lang_tag)
+
     result = ENGINE_DESCRIPTIONS['en'].copy()
-    if locale != 'en':
-        for engine, description in ENGINE_DESCRIPTIONS.get(locale, {}).items():
+    if sxng_ui_lang_tag != 'en':
+        for engine, description in ENGINE_DESCRIPTIONS.get(sxng_ui_lang_tag, {}).items():
             result[engine] = description
     for engine, description in result.items():
         if len(description) == 2 and description[1] == 'ref':
@@ -1372,9 +1367,9 @@ def is_werkzeug_reload_active() -> bool:
     .. _werkzeug.serving:
        https://werkzeug.palletsprojects.com/en/stable/serving/#werkzeug.serving.run_simple
     """
-
-    if "uwsgi" in sys.argv:
-        # server was launched by uWSGI
+    logger.debug("sys.argv: %s", sys.argv)
+    if "uwsgi" in sys.argv[0] or "granian" in sys.argv[0]:
+        # server was launched by granian (or uWSGI)
         return False
 
     # https://github.com/searxng/searxng/pull/1656#issuecomment-1214198941
@@ -1419,7 +1414,7 @@ def init():
         return
 
     locales_initialize()
-    redis_initialize()
+    valkey_initialize()
     searx.plugins.initialize(app)
 
     metrics: bool = get_setting("general.enable_metrics")  # type: ignore

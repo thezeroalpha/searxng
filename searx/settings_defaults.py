@@ -185,12 +185,15 @@ SCHEMA = {
         'method': SettingsValue(('POST', 'GET'), 'POST', 'SEARXNG_METHOD'),
         'default_http_headers': SettingsValue(dict, {}),
     },
+    # redis is deprecated ..
     'redis': {
         'url': SettingsValue((None, False, str), False, 'SEARXNG_REDIS_URL'),
     },
+    'valkey': {
+        'url': SettingsValue((None, False, str), False, 'SEARXNG_VALKEY_URL'),
+    },
     'ui': {
         'static_path': SettingsDirectoryValue(str, os.path.join(searx_dir, 'static')),
-        'static_use_hash': SettingsValue(bool, False, 'SEARXNG_STATIC_USE_HASH'),
         'templates_path': SettingsDirectoryValue(str, os.path.join(searx_dir, 'templates')),
         'default_theme': SettingsValue(str, 'simple'),
         'default_locale': SettingsValue(str, ''),
@@ -229,11 +232,6 @@ SCHEMA = {
         'using_tor_proxy': SettingsValue(bool, False),
         'extra_proxy_timeout': SettingsValue(int, 0),
         'networks': {},
-    },
-    'result_proxy': {
-        'url': SettingsValue((None, str), None),
-        'key': SettingsBytesValue((None, bytes), None),
-        'proxify_results': SettingsValue(bool, False),
     },
     'plugins': SettingsValue(dict, {}),
     'checker': {

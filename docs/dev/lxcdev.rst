@@ -140,7 +140,7 @@ proxy :ref:`installation nginx` into the archlinux container run:
 .. sidebar:: Fully functional SearXNG suite
 
    From here on you have a fully functional SearXNG suite (including a
-   :ref:`redis db`).
+   :ref:`valkey db`).
 
 In such a SearXNG suite admins can maintain and access the debug log of the
 services quite easy.
@@ -319,13 +319,13 @@ To *inspect* the SearXNG instance (already described above):
 
      .. code:: bash
 
-        $ ./utils/searx.sh inspect service
+        $ ./utils/searxng.sh inspect service
 
   .. group-tab:: desktop (HOST)
 
      .. code:: bash
 
-        $ sudo -H ./utils/lxc.sh cmd searxng-archlinux ./utils/searx.sh inspect service
+        $ sudo -H ./utils/lxc.sh cmd searxng-archlinux ./utils/searxng.sh inspect service
 
 Run :ref:`makefile`, e.g. to test inside the container:
 
@@ -435,4 +435,3 @@ use:
    [searxng-archlinux]    SEARXNG_URL          : http:///n.n.n.140/searxng
    [searxng-archlinux]    SEARXNG_PORT         : 8888
    [searxng-archlinux]    SEARXNG_BIND_ADDRESS : 127.0.0.1
-
