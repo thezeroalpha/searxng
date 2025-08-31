@@ -61,11 +61,9 @@ class _NotSetClass:  # pylint: disable=too-few-public-methods
 _NOTSET = _NotSetClass()
 
 
-def searx_useragent() -> str:
-    """Return the searx User Agent"""
-    return 'searx/{searx_version} {suffix}'.format(
-        searx_version=VERSION_TAG, suffix=settings['outgoing']['useragent_suffix']
-    ).strip()
+def searxng_useragent() -> str:
+    """Return the SearXNG User Agent"""
+    return f"SearXNG/{VERSION_TAG} {settings['outgoing']['useragent_suffix']}".strip()
 
 
 def gen_useragent(os_string: Optional[str] = None) -> str:
@@ -76,11 +74,7 @@ def gen_useragent(os_string: Optional[str] = None) -> str:
     return USER_AGENTS['ua'].format(os=os_string or choice(USER_AGENTS['os']), version=choice(USER_AGENTS['versions']))
 
 
-class _HTMLTextExtractorException(Exception):
-    """Internal exception raised when the HTML is invalid"""
-
-
-class _HTMLTextExtractor(HTMLParser):
+class HTMLTextExtractor(HTMLParser):
     """Internal class to extract text from HTML"""
 
     def __init__(self):
@@ -98,7 +92,8 @@ class _HTMLTextExtractor(HTMLParser):
             return
 
         if tag != self.tags[-1]:
-            raise _HTMLTextExtractorException()
+            self.result.append(f"</{tag}>")
+            return
 
         self.tags.pop()
 
@@ -151,23 +146,28 @@ def html_to_text(html_str: str) -> str:
         >>> html_to_text('<style>.span { color: red; }</style><span>Example</span>')
         'Example'
 
-        >>> html_to_text(r'regexp: (?<![a-zA-Z]')
+        >>> html_to_text(r'regexp: (?&lt;![a-zA-Z]')
         'regexp: (?<![a-zA-Z]'
+
+        >>> html_to_text(r'<p><b>Lorem ipsum </i>dolor sit amet</p>')
+        'Lorem ipsum </i>dolor sit amet</p>'
+
+        >>> html_to_text(r'&#x3e &#x3c &#97')
+        '> < a'
+
     """
     if not html_str:
         return ""
     html_str = html_str.replace('\n', ' ').replace('\r', ' ')
     html_str = ' '.join(html_str.split())
-    s = _HTMLTextExtractor()
+    s = HTMLTextExtractor()
     try:
         s.feed(html_str)
         s.close()
     except AssertionError:
-        s = _HTMLTextExtractor()
+        s = HTMLTextExtractor()
         s.feed(escape(html_str, quote=True))
         s.close()
-    except _HTMLTextExtractorException:
-        logger.debug("HTMLTextExtractor: invalid HTML\n%s", html_str)
     return s.get_text()
 
 
