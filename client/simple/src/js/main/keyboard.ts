@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { assertElement, listen, mutable, settings } from "../core/toolkit.ts";
+import { listen, mutable, settings } from "../toolkit.ts";
+import { assertElement } from "../util/assertElement.ts";
 
 export type KeyBindingLayout = "default" | "vim";
 
@@ -409,12 +410,31 @@ const toggleHelp = (keyBindings: typeof baseKeyBinding): void => {
 };
 
 const copyURLToClipboard = async (): Promise<void> => {
-  const currentUrlElement = document.querySelector<HTMLAnchorElement>(".result[data-vim-selected] h3 a");
-  assertElement(currentUrlElement);
+  const selectedResult = document.querySelector<HTMLElement>(".result[data-vim-selected]");
+  if (!selectedResult) return;
 
-  const url = currentUrlElement.getAttribute("href");
+  const resultAnchor = selectedResult.querySelector<HTMLAnchorElement>("a");
+  assertElement(resultAnchor);
+
+  const url = resultAnchor.getAttribute("href");
   if (url) {
-    await navigator.clipboard.writeText(url);
+    if (window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const selection = window.getSelection();
+      if (selection) {
+        const node = document.createElement("span");
+        node.textContent = url;
+        resultAnchor.appendChild(node);
+
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.execCommand("copy");
+        node.remove();
+      }
+    }
   }
 };
 

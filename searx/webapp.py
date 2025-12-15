@@ -356,16 +356,22 @@ def get_pretty_url(parsed_url: urllib.parse.ParseResult):
     path = parsed_url.path
     path = path[:-1] if len(path) > 0 and path[-1] == '/' else path
     path = unquote(path.replace("/", " › "))
+
+    # Keep the query argument for URLs like:
+    # - 'http://example.org?/foo/bar' --> parsed_url.query is 'foo/bar'
+    query_args: list[tuple[str, str]] = list(urllib.parse.parse_qsl(parsed_url.query))
+    if not query_args and parsed_url.query:
+        path += (" › .." if len(parsed_url.query) > 24 else " › ") + parsed_url.query[-24:]
     return [parsed_url.scheme + "://" + parsed_url.netloc, path]
 
 
 def get_client_settings():
     req_pref = sxng_request.preferences
     return {
+        'plugins': req_pref.plugins.get_enabled(),
         'autocomplete': req_pref.get_value('autocomplete'),
         'autocomplete_min': get_setting('search.autocomplete_min'),
         'method': req_pref.get_value('method'),
-        'infinite_scroll': req_pref.get_value('infinite_scroll'),
         'translations': get_translations(),
         'search_on_category_select': req_pref.get_value('search_on_category_select'),
         'hotkeys': req_pref.get_value('hotkeys'),
@@ -1034,7 +1040,6 @@ def image_proxy():
         request_headers = {
             'User-Agent': gen_useragent(),
             'Accept': 'image/webp,*/*',
-            'Accept-Encoding': 'gzip, deflate',
             'Sec-GPC': '1',
             'DNT': '1',
         }
