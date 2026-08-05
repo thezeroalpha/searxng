@@ -41,8 +41,10 @@
   - ``dbpedia``
   - ``duckduckgo``
   - ``google``
+  - ``kagi``
   - ``mwmbl``
   - ``naver``
+  - ``privacywall``
   - ``quark``
   - ``qwant``
   - ``seznam``
