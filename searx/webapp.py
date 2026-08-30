@@ -484,14 +484,14 @@ def pre_request():
         if k not in sxng_request.form:
             sxng_request.form[k] = v
 
-    if sxng_request.form.get('preferences'):
-        preferences.parse_encoded_data(sxng_request.form['preferences'])
-    else:
-        try:
+    try:
+        if sxng_request.form.get('preferences'):
+            preferences.parse_encoded_data(sxng_request.form['preferences'])
+        else:
             preferences.parse_dict(sxng_request.form)
-        except Exception as e:  # pylint: disable=broad-except
-            logger.exception(e, exc_info=True)
-            sxng_request.errors.append(gettext('Invalid settings'))
+    except Exception as e:  # pylint: disable=broad-except
+        logger.exception(e, exc_info=True)
+        sxng_request.errors.append(gettext('Invalid settings'))
 
     # language is defined neither in settings nor in preferences
     # use browser headers
@@ -1195,7 +1195,7 @@ def opensearch():
         method = 'GET'
 
     if method not in ('POST', 'GET'):
-        method = 'POST'
+        method = 'GET'
 
     ret = render('opensearch.xml', opensearch_method=method, autocomplete=autocomplete)
     resp = Response(response=ret, status=200, mimetype="application/opensearchdescription+xml")

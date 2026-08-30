@@ -6543,7 +6543,7 @@
                     }
                 },
                 "c": {
-                    "\u0010": "//www.google.com/search?q=\u0002&tbm=isch&sout=1\u00013",
+                    "\u0010": "//www.google.com/search?udm=14&q=\u0002&tbm=isch&sout=1\u00013",
                     "a": "http://www.google.ca/search?q=\u0002&tbm=isch\u00010"
                 },
                 "d": "http://www.google.co.id/search?source=hp&q=\u0002&meta=&aq=f&aqi=g10&aql=&oq=&gs_rfai=\u00019",
@@ -19040,7 +19040,7 @@
         "мапс": "//www.google.bg/maps/search/\u0002/\u00010",
         "нпсд": "//npsd.party/?s=\u0002\u00010",
         "п": {
-            "\u0010": "//www.google.com/search?q=\u0002\u00011693724",
+            "\u0010": "//www.google.com/search?udm=14&q=\u0002\u00011693724",
             "ш": "//www.google.ru/search?tbm=isch&q=\u0002\u00010"
         },
         "уики": "//bg.wikipedia.org/wiki/\u0002\u00010",
